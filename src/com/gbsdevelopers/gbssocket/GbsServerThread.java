@@ -6,18 +6,43 @@ import java.util.*;
 
 import java.sql.*;
 
+/**
+ * This class contains every server action.
+ */
 public class GbsServerThread implements Runnable {
 
+    /**
+     * Header of received message.
+     */
     private String inputHeader;
 
+    /**
+     * Arguments of received message.
+     */
     private Vector<String> inputArguments;
 
+    /**
+     * Stream to client.
+     */
     private ObjectOutputStream toClient;
 
+    /**
+     * Server socket address
+     */
     private SocketAddress socketAddress;
 
+    /**
+     * Empty return message
+     */
     private GbsMessage emptyMessage;
 
+    /**
+     * Constructor for server thread.
+     * @param inputHeader Header of received message.
+     * @param inputArguments Arguments of received message.
+     * @param toClient Stream to client.
+     * @param socketAddress Server socket address
+     */
     public GbsServerThread(String inputHeader, Vector<String> inputArguments, ObjectOutputStream toClient,
             SocketAddress socketAddress) {
         this.inputHeader = inputHeader;
@@ -28,10 +53,17 @@ public class GbsServerThread implements Runnable {
         emptyMessage = new GbsMessage("empty", new Vector<String>());
     }
 
+    /**
+     * Simple function that puts logs in console window
+     * @param message Log message
+     */
     private void log(String message) {
         System.out.println("[" + inputHeader + socketAddress + "]\t " + message);
     }
 
+    /**
+     * run() method. Necessary for threads.
+     */
     public void run() {
         log("started");
         try {
@@ -43,6 +75,10 @@ public class GbsServerThread implements Runnable {
         }
     }
 
+    /**
+     * Connects to database.
+     * @return MySQL's connection.
+     */
     private Connection getConnection(){
         Connection conn = null;
         try{
@@ -57,6 +93,10 @@ public class GbsServerThread implements Runnable {
 
     // Handlers
 
+    /**
+     * Handler for _loginUser header.
+     * @return Reply message.
+     */
     private GbsMessage _loginUser() {
         GbsMessage reply = new GbsMessage();
 
@@ -96,6 +136,10 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
+    /**
+     * Handler for _configureDB header.
+     * @return Reply message.
+     */
     private GbsMessage _configureDB()
     {
         GbsServer.mysqlString += inputArguments.get(0);
@@ -113,6 +157,10 @@ public class GbsServerThread implements Runnable {
         return emptyMessage;
     }
 
+    /**
+     * Creates server response.
+     * @return Server response message.
+     */
     private GbsMessage getResponse() {
         GbsMessage response;
         // obsluga serwera

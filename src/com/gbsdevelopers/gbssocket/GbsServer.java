@@ -3,18 +3,37 @@ package com.gbsdevelopers.gbssocket;
 import java.io.*;
 import java.net.*;
 
+/**
+ * This class contains everything is required to handle receiving, processing and returning requests via TCP Socket
+ */
 public class GbsServer {
-
+    /**
+     * MySQL's connection string
+     */
     public static String mysqlString;
 
+    /**
+     * MySQL's user
+     */
     public static String mysqlUser;
 
+    /**
+     * MySQL's password
+     */
     public static String mysqlPassword;
 
+    /**
+     * Simple function that puts logs in console window
+     * @param message Log message
+     */
     private static void log(String message) {
         System.out.println("[GbsServer]\t " + message);
     }
 
+    /**
+     * Function returning random port number from range 49152 - 65535. Used when user don't have specified port number.
+     * @return Server port number
+     */
     private static int getRandomPort()
     {
         int min = 49152;
@@ -22,6 +41,11 @@ public class GbsServer {
         return (int)Math.floor(Math.random()*(max-min+1)+min);
     }
 
+    /**
+     * Function that try to parse string to int. If parse fails, returns random port number.
+     * @param str String to parse
+     * @return Parsed integer
+     */
     private static int tryParseInt(String str)
     {
         int number = getRandomPort();
@@ -34,6 +58,10 @@ public class GbsServer {
         return number;
     }
 
+    /**
+     * Main function. This function accepts a requests and creates a thread that handles them.
+     * @param args Program arguments
+     */
     public static void main(String[] args) {
         mysqlString = "jdbc:mysql://";
         int serverPort = 0;
