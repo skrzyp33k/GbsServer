@@ -13,6 +13,11 @@ public class GbsServer {
     public static String mysqlString;
 
     /**
+     * MySQL's credentials flag
+     */
+    public static boolean isMySqlSet;
+
+    /**
      * MySQL's user
      */
     public static String mysqlUser;
@@ -26,7 +31,7 @@ public class GbsServer {
      * Simple function that puts logs in console window
      * @param message Log message
      */
-    private static void log(String message) {
+    public static void log(String message) {
         System.out.println("[GbsServer]\t " + message);
     }
 
@@ -63,8 +68,8 @@ public class GbsServer {
      * @param args Program arguments
      */
     public static void main(String[] args) {
-        mysqlString = "jdbc:mysql://";
         int serverPort = 0;
+        isMySqlSet = false;
         try
         {
             serverPort = tryParseInt(args[0]);
@@ -88,7 +93,6 @@ public class GbsServer {
                 GbsMessage msgRequest = (GbsMessage) fromClient.readObject();
                 new Thread(new GbsServerThread(msgRequest.header, msgRequest.arguments, toClient,
                         socket.getRemoteSocketAddress())).start();
-                log("Connection closed with " + socket.getRemoteSocketAddress());
             }
         } catch (IOException e) {
             e.printStackTrace();

@@ -32,11 +32,6 @@ public class GbsServerThread implements Runnable {
     private SocketAddress socketAddress;
 
     /**
-     * Empty return message
-     */
-    private GbsMessage emptyMessage;
-
-    /**
      * Constructor for server thread.
      * @param inputHeader Header of received message.
      * @param inputArguments Arguments of received message.
@@ -49,8 +44,6 @@ public class GbsServerThread implements Runnable {
         this.inputArguments = inputArguments;
         this.toClient = toClient;
         this.socketAddress = socketAddress;
-
-        emptyMessage = new GbsMessage("empty", new Vector<String>());
     }
 
     /**
@@ -108,8 +101,8 @@ public class GbsServerThread implements Runnable {
         Statement st;
         ResultSet rs;
 
-        String loggedUser = null;
-        String loggedPerms = null;
+        String loggedUser = "";
+        String loggedPerms = "";
         try{
             st = conn.createStatement();
             rs = st.executeQuery(query);
@@ -124,12 +117,20 @@ public class GbsServerThread implements Runnable {
             ex.printStackTrace();
         }
 
-        reply.header = "0";
-
         Vector<String> replyArgs = new Vector<String>();
 
-        replyArgs.add(loggedUser);
-        replyArgs.add(loggedPerms);
+        if(loggedUser.isEmpty())
+        {
+            reply.header = "1";
+            log("Invalid login credentials");
+        }
+        else
+        {
+            reply.header = "0";
+            replyArgs.add(loggedUser);
+            replyArgs.add(loggedPerms);
+            log("Logged user " + loggedUser + " with \"" + loggedPerms +  "\" perms");
+        }
 
         reply.arguments = replyArgs;
 
@@ -142,19 +143,29 @@ public class GbsServerThread implements Runnable {
      */
     private GbsMessage _configureDB()
     {
-        GbsServer.mysqlString += inputArguments.get(0);
-        GbsServer.mysqlString += ":";
-        GbsServer.mysqlString += inputArguments.get(1);
-        GbsServer.mysqlString += "/";
-        GbsServer.mysqlString += inputArguments.get(2);
+        if(!GbsServer.isMySqlSet) {
+            GbsServer.mysqlString = "jdbc:mysql://";
+            GbsServer.mysqlString += inputArguments.get(0);
+            GbsServer.mysqlString += ":";
+            GbsServer.mysqlString += inputArguments.get(1);
+            GbsServer.mysqlString += "/";
+            GbsServer.mysqlString += inputArguments.get(2);
 
-        GbsServer.mysqlUser = inputArguments.get(3);
+            GbsServer.mysqlUser = inputArguments.get(3);
 
-        GbsServer.mysqlPassword = inputArguments.get(4);
+            GbsServer.mysqlPassword = inputArguments.get(4);
 
-        log("mysql connection:\t" + GbsServer.mysqlString + "\t" + GbsServer.mysqlUser + "\t" + GbsServer.mysqlPassword);
+            log("MySql connection string: " + GbsServer.mysqlString);
+            log("MySql connection user: " + GbsServer.mysqlUser);
+            log("MySql connection password " + GbsServer.mysqlPassword);
 
-        return emptyMessage;
+            GbsServer.isMySqlSet = true;
+        }
+        else
+        {
+            GbsServer.log("MySql credentials are previously set.");
+        }
+        return new GbsMessage("0", null);
     }
 
     /**
@@ -172,9 +183,10 @@ public class GbsServerThread implements Runnable {
                 response = _loginUser();
                 break;
             default:
-                response = emptyMessage;
+                response = new GbsMessage("empty", new Vector<String>());;
         }
         log("finished");
+        GbsServer.log("Connection closed with " + socketAddress);
         return response;
     }
 }
