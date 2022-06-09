@@ -248,12 +248,12 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
-    private GbsMessage _listClass()
+    private GbsMessage _listSchedulesTables()
     {
         GbsMessage reply = new GbsMessage();
 
         Connection conn = getConnection();
-        String query = "SELECT CONCAT('plan_',nazwa_klasy) AS Plany FROM klasy;";
+        String query = "SELECT CONCAT('plan_',nazwa_klasy) AS Plany FROM klasy ORDER BY Plany ASC;";
         Statement st;
         ResultSet rs;
 
@@ -281,7 +281,7 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
-    private GbsMessage _listAccounts()
+    private GbsMessage _listAccounts() //dodaj where
     {
         GbsMessage reply = new GbsMessage();
 
@@ -320,12 +320,12 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
-    private GbsMessage _listStudents()
+    private GbsMessage _listStudents() //dodaj where
     {
         GbsMessage reply = new GbsMessage();
 
         Connection conn = getConnection();
-        String query = "SELECT * FROM uczniowie;";
+        String query = "SELECT u.ID_ucznia AS ID_ucznia, u.imie AS imie, u.nazwisko AS nazwisko, u.ID_rodzica AS ID_rodzica, u.ID_klasy AS ID_klasy, u.ID_konta AS ID_konta, k.nazwa_klasy FROM uczniowie AS u, klasy AS k WHERE u.ID_klasy = k.ID_klasy ORDER BY k.nazwa_klasy ASC, u.nazwisko ASC, u.imie ASC;";
         Statement st;
         ResultSet rs;
 
@@ -361,12 +361,12 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
-    private GbsMessage _listParents()
+    private GbsMessage _listParents() //dodaj where
     {
         GbsMessage reply = new GbsMessage();
 
         Connection conn = getConnection();
-        String query = "SELECT * FROM rodzice;";
+        String query = "SELECT * FROM rodzice ORDER BY nazwisko ASC, imie ASC;";
         Statement st;
         ResultSet rs;
 
@@ -400,12 +400,12 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
-    private GbsMessage _listTeachers()
+    private GbsMessage _listTeachers() //dodaj where
     {
         GbsMessage reply = new GbsMessage();
 
         Connection conn = getConnection();
-        String query = "SELECT * FROM nauczyciele;";
+        String query = "SELECT * FROM nauczyciele ORDER BY nazwisko ASC, imie ASC;";
         Statement st;
         ResultSet rs;
 
@@ -440,6 +440,325 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
+    private GbsMessage _listClasses() //dodaj where
+    {
+        GbsMessage reply = new GbsMessage();
+
+        Connection conn = getConnection();
+        String query = "SELECT * FROM klasy ORDER BY nazwa_klasy ASC;";
+        Statement st;
+        ResultSet rs;
+
+        int Count = 0;
+
+        Vector<String> accounts = new Vector<String>();
+
+        try{
+            st = conn.createStatement();
+            rs = st.executeQuery(query);
+
+            while(rs.next())
+            {
+                Count++;
+                Vector<String> row = new Vector<String>();
+                row.add(rs.getString("ID_klasy"));
+                row.add(rs.getString("nazwa_klasy"));
+                row.add(rs.getString("ID_nauczyciela"));
+
+                accounts.add(GbsMessage.implode(row,";"));
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        reply.header = Integer.toString(Count);
+        reply.arguments = accounts;
+
+        return reply;
+    }
+
+    private GbsMessage _listLessons() //dodaj where
+    {
+        GbsMessage reply = new GbsMessage();
+
+        Connection conn = getConnection();
+        String query = "SELECT * FROM lekcje ORDER BY Sala ASC;";
+        Statement st;
+        ResultSet rs;
+
+        int Count = 0;
+
+        Vector<String> accounts = new Vector<String>();
+
+        try{
+            st = conn.createStatement();
+            rs = st.executeQuery(query);
+
+            while(rs.next())
+            {
+                Count++;
+                Vector<String> row = new Vector<String>();
+                row.add(rs.getString("ID_lekcji"));
+                row.add(rs.getString("ID_przedmiotu"));
+                row.add(rs.getString("Sala"));
+                row.add(rs.getString("ID_nauczyciela"));
+                row.add(rs.getString("ID_klasy"));
+
+                accounts.add(GbsMessage.implode(row,";"));
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        reply.header = Integer.toString(Count);
+        reply.arguments = accounts;
+
+        return reply;
+    }
+
+    private GbsMessage _listAttendances() //dodaj where
+    {
+        GbsMessage reply = new GbsMessage();
+
+        Connection conn = getConnection();
+        String query = "SELECT * FROM nieobecnosci ORDER BY data_nieobecnosci DESC;";
+        Statement st;
+        ResultSet rs;
+
+        int Count = 0;
+
+        Vector<String> accounts = new Vector<String>();
+
+        try{
+            st = conn.createStatement();
+            rs = st.executeQuery(query);
+
+            while(rs.next())
+            {
+                Count++;
+                Vector<String> row = new Vector<String>();
+                row.add(rs.getString("ID_nieobecnosci"));
+                row.add(rs.getString("ID_ucznia"));
+                row.add(rs.getString("ID_lekcji"));
+                row.add(rs.getString("data_nieobecnosci"));
+                row.add(rs.getString("TYP"));
+
+                accounts.add(GbsMessage.implode(row,";"));
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        reply.header = Integer.toString(Count);
+        reply.arguments = accounts;
+
+        return reply;
+    }
+
+    private GbsMessage _listGrades() //dodaj where
+    {
+        GbsMessage reply = new GbsMessage();
+
+        Connection conn = getConnection();
+        String query = "SELECT * FROM oceny ORDER BY data_wystawienia DESC;";
+        Statement st;
+        ResultSet rs;
+
+        int Count = 0;
+
+        Vector<String> accounts = new Vector<String>();
+
+        try{
+            st = conn.createStatement();
+            rs = st.executeQuery(query);
+
+            while(rs.next())
+            {
+                Count++;
+                Vector<String> row = new Vector<String>();
+                row.add(rs.getString("ID_oceny"));
+                row.add(rs.getString("Ocena"));
+                row.add(rs.getString("Waga"));
+                row.add(rs.getString("Opis"));
+                row.add(rs.getString("ID_ucznia"));
+                row.add(rs.getString("ID_nauczyciela"));
+                row.add(rs.getString("ID_przedmiotu"));
+                row.add(rs.getString("data_wystawienia"));
+
+                accounts.add(GbsMessage.implode(row,";"));
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        reply.header = Integer.toString(Count);
+        reply.arguments = accounts;
+
+        return reply;
+    }
+
+    private GbsMessage _listCourses() //dodaj where
+    {
+        GbsMessage reply = new GbsMessage();
+
+        Connection conn = getConnection();
+        String query = "SELECT * FROM przedmioty ORDER BY nazwa_przedmiotu ASC;";
+        Statement st;
+        ResultSet rs;
+
+        int Count = 0;
+
+        Vector<String> accounts = new Vector<String>();
+
+        try{
+            st = conn.createStatement();
+            rs = st.executeQuery(query);
+
+            while(rs.next())
+            {
+                Count++;
+                Vector<String> row = new Vector<String>();
+                row.add(rs.getString("ID_przedmiotu"));
+                row.add(rs.getString("nazwa_przedmiotu"));
+                row.add(rs.getString("opis"));
+
+                accounts.add(GbsMessage.implode(row,";"));
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        reply.header = Integer.toString(Count);
+        reply.arguments = accounts;
+
+        return reply;
+    }
+
+    private GbsMessage _listRemarks() //dodaj where
+    {
+        GbsMessage reply = new GbsMessage();
+
+        Connection conn = getConnection();
+        String query = "SELECT * FROM uwagi ORDER BY data_wystawienia DESC;";
+        Statement st;
+        ResultSet rs;
+
+        int Count = 0;
+
+        Vector<String> accounts = new Vector<String>();
+
+        try{
+            st = conn.createStatement();
+            rs = st.executeQuery(query);
+
+            while(rs.next())
+            {
+                Count++;
+                Vector<String> row = new Vector<String>();
+                row.add(rs.getString("ID_uwagi"));
+                row.add(rs.getString("Tresc"));
+                row.add(rs.getString("ID_nauczyciela"));
+                row.add(rs.getString("ID_ucznia"));
+                row.add(rs.getString("data_wystawienia"));
+
+                accounts.add(GbsMessage.implode(row,";"));
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        reply.header = Integer.toString(Count);
+        reply.arguments = accounts;
+
+        return reply;
+    }
+
+    private GbsMessage _listEvents() //dodaj where
+    {
+        GbsMessage reply = new GbsMessage();
+
+        Connection conn = getConnection();
+        String query = "SELECT * FROM wydarzenia ORDER BY data_wydarzenia ASC;";
+        Statement st;
+        ResultSet rs;
+
+        int Count = 0;
+
+        Vector<String> accounts = new Vector<String>();
+
+        try{
+            st = conn.createStatement();
+            rs = st.executeQuery(query);
+
+            while(rs.next())
+            {
+                Count++;
+                Vector<String> row = new Vector<String>();
+                row.add(rs.getString("ID_wydarzenia"));
+                row.add(rs.getString("Kategoria"));
+                row.add(rs.getString("Opis"));
+                row.add(rs.getString("ID_lekcji"));
+                row.add(rs.getString("data_wydarzenia"));
+
+                accounts.add(GbsMessage.implode(row,";"));
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        reply.header = Integer.toString(Count);
+        reply.arguments = accounts;
+
+        return reply;
+    }
+
+    private GbsMessage _listMessages() //dodaj where
+    {
+        GbsMessage reply = new GbsMessage();
+
+        Connection conn = getConnection();
+        String query = "SELECT * FROM wiadomosci ORDER BY data_wyslania DESC;";
+        Statement st;
+        ResultSet rs;
+
+        int Count = 0;
+
+        Vector<String> accounts = new Vector<String>();
+
+        try{
+            st = conn.createStatement();
+            rs = st.executeQuery(query);
+
+            while(rs.next())
+            {
+                Count++;
+                Vector<String> row = new Vector<String>();
+                row.add(rs.getString("ID_wiadomosci"));
+                row.add(rs.getString("Wiadomosc"));
+                row.add(rs.getString("ID_nadawcy"));
+                row.add(rs.getString("ID_odbiorcy"));
+                row.add(rs.getString("data_wyslania"));
+
+                accounts.add(GbsMessage.implode(row,";"));
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        reply.header = Integer.toString(Count);
+        reply.arguments = accounts;
+
+        return reply;
+    }
+
     /**
      * Creates server response.
      * @return Server response message.
@@ -460,8 +779,8 @@ public class GbsServerThread implements Runnable {
             case "_removeClass":
                 response = _removeClass();
                 break;
-            case "_listClass":
-                response = _listClass();
+            case "_listSchedulesTables":
+                response = _listSchedulesTables();
                 break;
             case "_listAccounts":
                 response = _listAccounts();
@@ -474,6 +793,30 @@ public class GbsServerThread implements Runnable {
                 break;
             case "_listTeachers":
                 response = _listTeachers();
+                break;
+            case "_listClasses":
+                response = _listClasses();
+                break;
+            case "_listLessons":
+                response = _listLessons();
+                break;
+            case "_listAttendances":
+                response = _listAttendances();
+                break;
+            case "_listGrades":
+                response = _listGrades();
+                break;
+            case "_listCourses":
+                response = _listCourses();
+                break;
+            case "_listRemarks":
+                response = _listRemarks();
+                break;
+            case "_listEvents":
+                response = _listEvents();
+                break;
+            case "_listMessages":
+                response = _listMessages();
                 break;
             default:
                 response = new GbsMessage("empty", new Vector<String>());;
