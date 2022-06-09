@@ -2,6 +2,7 @@ package com.gbsdevelopers.gbssocket;
 
 import java.io.*;
 import java.net.*;
+import java.sql.Connection;
 
 /**
  * This class contains everything is required to handle receiving, processing and returning requests via TCP Socket
@@ -31,6 +32,9 @@ public class GbsServer {
      * Simple function that puts logs in console window
      * @param message Log message
      */
+
+    public static Connection conn;
+
     public static void log(String message) {
         System.out.println("[GbsServer]\t " + message);
     }

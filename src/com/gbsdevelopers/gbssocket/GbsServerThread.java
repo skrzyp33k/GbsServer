@@ -100,20 +100,21 @@ public class GbsServerThread implements Runnable {
         String login = inputArguments.get(0);
         String password = inputArguments.get(1);
 
-        Connection conn = getConnection();
         String query = "SELECT * FROM konta WHERE Login = '" + login + "' AND Haslo = '" + password + "';";
         Statement st;
         ResultSet rs;
 
         String loggedUser = "";
         String loggedPerms = "";
+        String loggedID = "";
         try {
-            st = conn.createStatement();
+            st = GbsServer.conn.createStatement();
             rs = st.executeQuery(query);
 
             while (rs.next()) {
                 loggedUser = rs.getString("Login");
                 loggedPerms = rs.getString("Uprawnienia");
+                loggedID = rs.getString("ID_Konta");
             }
 
         } catch (SQLException ex) {
@@ -129,7 +130,8 @@ public class GbsServerThread implements Runnable {
             reply.header = "0";
             replyArgs.add(loggedUser);
             replyArgs.add(loggedPerms);
-            log("Logged user " + loggedUser + " with \"" + loggedPerms + "\" perms");
+            replyArgs.add(loggedID);
+            log("Logged user " + loggedUser + " with \"" + loggedPerms + "\" perms and ID == " + loggedID);
         }
 
         reply.arguments = replyArgs;
@@ -159,11 +161,21 @@ public class GbsServerThread implements Runnable {
             log("MySql connection user: " + GbsServer.mysqlUser);
             log("MySql connection password " + GbsServer.mysqlPassword);
 
+            GbsServer.conn = this.getConnection();
+
             GbsServer.isMySqlSet = true;
         } else {
             GbsServer.log("MySql credentials are previously set.");
         }
         return new GbsMessage("0", null);
+    }
+
+    private GbsMessage _manualQuery() {
+        GbsMessage reply = new GbsMessage();
+
+
+
+        return reply;
     }
 
     private GbsMessage _createClass() {
@@ -178,13 +190,12 @@ public class GbsServerThread implements Runnable {
         queries.add("ALTER TABLE plan_" + className + " ADD PRIMARY KEY (Godzina), ADD KEY Poniedzialek(Poniedzialek), ADD KEY Wtorek(Wtorek), ADD KEY Sroda(Sroda), ADD KEY Czwartek (Czwartek), ADD KEY Piatek (Piatek);");
         queries.add("ALTER TABLE plan_" + className + " ADD CONSTRAINT plan_" + className + "_ibfk_1 FOREIGN KEY (Poniedzialek) REFERENCES lekcje(ID_lekcji), ADD CONSTRAINT plan_" + className + "_ibfk_2 FOREIGN KEY(Wtorek) REFERENCES lekcje(ID_lekcji), ADD CONSTRAINT plan_" + className + "_ibfk_3 FOREIGN KEY(Sroda) REFERENCES lekcje(ID_lekcji), ADD CONSTRAINT plan_" + className + "_ibfk_4 FOREIGN KEY(Czwartek) REFERENCES lekcje(ID_lekcji), ADD CONSTRAINT plan_" + className + "_ibfk_5 FOREIGN KEY(Piatek) REFERENCES lekcje(ID_lekcji);");
 
-        Connection conn = getConnection();
         Statement st;
 
         for (String query : queries) {
             try {
                 log("Executing " + query);
-                st = conn.createStatement();
+                st = GbsServer.conn.createStatement();
                 st.execute(query);
 
             } catch (SQLException e) {
@@ -201,12 +212,11 @@ public class GbsServerThread implements Runnable {
         String className = inputArguments.get(0);
         String classID = "";
 
-        Connection conn = getConnection();
         String getIdQuery = "SELECT ID_klasy FROM klasy WHERE nazwa_klasy = '" + className + "';";
         Statement st;
         ResultSet rs;
         try {
-            st = conn.createStatement();
+            st = GbsServer.conn.createStatement();
             rs = st.executeQuery(getIdQuery);
             log("Executing " + getIdQuery);
 
@@ -228,7 +238,7 @@ public class GbsServerThread implements Runnable {
         for (String query : queries) {
             try {
                 log("Executing " + query);
-                st = conn.createStatement();
+                st = GbsServer.conn.createStatement();
                 st.execute(query);
 
             } catch (SQLException e) {
@@ -242,7 +252,6 @@ public class GbsServerThread implements Runnable {
     private GbsMessage _listSchedulesTables() {
         GbsMessage reply = new GbsMessage();
 
-        Connection conn = getConnection();
         String query = "SELECT CONCAT('plan_',nazwa_klasy) AS Plany FROM klasy ORDER BY Plany ASC;";
         Statement st;
         ResultSet rs;
@@ -252,7 +261,7 @@ public class GbsServerThread implements Runnable {
         Vector<String> classes = new Vector<String>();
 
         try {
-            st = conn.createStatement();
+            st = GbsServer.conn.createStatement();
             rs = st.executeQuery(query);
 
             while (rs.next()) {
@@ -275,7 +284,6 @@ public class GbsServerThread implements Runnable {
 
         String tableName = inputArguments.get(0);
 
-        Connection conn = getConnection();
         String query = "SELECT * FROM " + tableName + ";";
         Statement st;
         ResultSet rs;
@@ -285,7 +293,7 @@ public class GbsServerThread implements Runnable {
         Vector<String> accounts = new Vector<String>();
 
         try {
-            st = conn.createStatement();
+            st = GbsServer.conn.createStatement();
             rs = st.executeQuery(query);
 
             while (rs.next()) {
@@ -317,7 +325,6 @@ public class GbsServerThread implements Runnable {
     {
         GbsMessage reply = new GbsMessage();
 
-        Connection conn = getConnection();
         String query = "SELECT * FROM konta;";
         Statement st;
         ResultSet rs;
@@ -327,7 +334,7 @@ public class GbsServerThread implements Runnable {
         Vector<String> accounts = new Vector<String>();
 
         try {
-            st = conn.createStatement();
+            st = GbsServer.conn.createStatement();
             rs = st.executeQuery(query);
 
             while (rs.next()) {
@@ -355,7 +362,6 @@ public class GbsServerThread implements Runnable {
     {
         GbsMessage reply = new GbsMessage();
 
-        Connection conn = getConnection();
         String query = "SELECT u.ID_ucznia AS ID_ucznia, u.imie AS imie, u.nazwisko AS nazwisko, u.ID_rodzica AS ID_rodzica, u.ID_klasy AS ID_klasy, u.ID_konta AS ID_konta, k.nazwa_klasy FROM uczniowie AS u, klasy AS k WHERE u.ID_klasy = k.ID_klasy ORDER BY k.nazwa_klasy ASC, u.nazwisko ASC, u.imie ASC;";
         Statement st;
         ResultSet rs;
@@ -365,7 +371,7 @@ public class GbsServerThread implements Runnable {
         Vector<String> accounts = new Vector<String>();
 
         try {
-            st = conn.createStatement();
+            st = GbsServer.conn.createStatement();
             rs = st.executeQuery(query);
 
             while (rs.next()) {
@@ -395,7 +401,6 @@ public class GbsServerThread implements Runnable {
     {
         GbsMessage reply = new GbsMessage();
 
-        Connection conn = getConnection();
         String query = "SELECT * FROM rodzice ORDER BY nazwisko ASC, imie ASC;";
         Statement st;
         ResultSet rs;
@@ -405,7 +410,7 @@ public class GbsServerThread implements Runnable {
         Vector<String> accounts = new Vector<String>();
 
         try {
-            st = conn.createStatement();
+            st = GbsServer.conn.createStatement();
             rs = st.executeQuery(query);
 
             while (rs.next()) {
@@ -433,7 +438,6 @@ public class GbsServerThread implements Runnable {
     {
         GbsMessage reply = new GbsMessage();
 
-        Connection conn = getConnection();
         String query = "SELECT * FROM nauczyciele ORDER BY nazwisko ASC, imie ASC;";
         Statement st;
         ResultSet rs;
@@ -443,7 +447,7 @@ public class GbsServerThread implements Runnable {
         Vector<String> accounts = new Vector<String>();
 
         try {
-            st = conn.createStatement();
+            st = GbsServer.conn.createStatement();
             rs = st.executeQuery(query);
 
             while (rs.next()) {
@@ -472,7 +476,6 @@ public class GbsServerThread implements Runnable {
     {
         GbsMessage reply = new GbsMessage();
 
-        Connection conn = getConnection();
         String query = "SELECT * FROM klasy ORDER BY nazwa_klasy ASC;";
         Statement st;
         ResultSet rs;
@@ -482,7 +485,7 @@ public class GbsServerThread implements Runnable {
         Vector<String> accounts = new Vector<String>();
 
         try {
-            st = conn.createStatement();
+            st = GbsServer.conn.createStatement();
             rs = st.executeQuery(query);
 
             while (rs.next()) {
@@ -509,7 +512,6 @@ public class GbsServerThread implements Runnable {
     {
         GbsMessage reply = new GbsMessage();
 
-        Connection conn = getConnection();
         String query = "SELECT * FROM lekcje ORDER BY Sala ASC;";
         Statement st;
         ResultSet rs;
@@ -519,7 +521,7 @@ public class GbsServerThread implements Runnable {
         Vector<String> accounts = new Vector<String>();
 
         try {
-            st = conn.createStatement();
+            st = GbsServer.conn.createStatement();
             rs = st.executeQuery(query);
 
             while (rs.next()) {
@@ -548,7 +550,6 @@ public class GbsServerThread implements Runnable {
     {
         GbsMessage reply = new GbsMessage();
 
-        Connection conn = getConnection();
         String query = "SELECT * FROM nieobecnosci ORDER BY data_nieobecnosci DESC;";
         Statement st;
         ResultSet rs;
@@ -558,7 +559,7 @@ public class GbsServerThread implements Runnable {
         Vector<String> accounts = new Vector<String>();
 
         try {
-            st = conn.createStatement();
+            st = GbsServer.conn.createStatement();
             rs = st.executeQuery(query);
 
             while (rs.next()) {
@@ -587,7 +588,6 @@ public class GbsServerThread implements Runnable {
     {
         GbsMessage reply = new GbsMessage();
 
-        Connection conn = getConnection();
         String query = "SELECT * FROM oceny ORDER BY data_wystawienia DESC;";
         Statement st;
         ResultSet rs;
@@ -597,7 +597,7 @@ public class GbsServerThread implements Runnable {
         Vector<String> accounts = new Vector<String>();
 
         try {
-            st = conn.createStatement();
+            st = GbsServer.conn.createStatement();
             rs = st.executeQuery(query);
 
             while (rs.next()) {
@@ -629,7 +629,6 @@ public class GbsServerThread implements Runnable {
     {
         GbsMessage reply = new GbsMessage();
 
-        Connection conn = getConnection();
         String query = "SELECT * FROM przedmioty ORDER BY nazwa_przedmiotu ASC;";
         Statement st;
         ResultSet rs;
@@ -639,7 +638,7 @@ public class GbsServerThread implements Runnable {
         Vector<String> accounts = new Vector<String>();
 
         try {
-            st = conn.createStatement();
+            st = GbsServer.conn.createStatement();
             rs = st.executeQuery(query);
 
             while (rs.next()) {
@@ -666,7 +665,6 @@ public class GbsServerThread implements Runnable {
     {
         GbsMessage reply = new GbsMessage();
 
-        Connection conn = getConnection();
         String query = "SELECT * FROM uwagi ORDER BY data_wystawienia DESC;";
         Statement st;
         ResultSet rs;
@@ -676,7 +674,7 @@ public class GbsServerThread implements Runnable {
         Vector<String> accounts = new Vector<String>();
 
         try {
-            st = conn.createStatement();
+            st = GbsServer.conn.createStatement();
             rs = st.executeQuery(query);
 
             while (rs.next()) {
@@ -705,7 +703,6 @@ public class GbsServerThread implements Runnable {
     {
         GbsMessage reply = new GbsMessage();
 
-        Connection conn = getConnection();
         String query = "SELECT * FROM wydarzenia ORDER BY data_wydarzenia ASC;";
         Statement st;
         ResultSet rs;
@@ -715,7 +712,7 @@ public class GbsServerThread implements Runnable {
         Vector<String> accounts = new Vector<String>();
 
         try {
-            st = conn.createStatement();
+            st = GbsServer.conn.createStatement();
             rs = st.executeQuery(query);
 
             while (rs.next()) {
@@ -744,7 +741,6 @@ public class GbsServerThread implements Runnable {
     {
         GbsMessage reply = new GbsMessage();
 
-        Connection conn = getConnection();
         String query = "SELECT * FROM wiadomosci ORDER BY data_wyslania DESC;";
         Statement st;
         ResultSet rs;
@@ -754,7 +750,7 @@ public class GbsServerThread implements Runnable {
         Vector<String> accounts = new Vector<String>();
 
         try {
-            st = conn.createStatement();
+            st = GbsServer.conn.createStatement();
             rs = st.executeQuery(query);
 
             while (rs.next()) {
@@ -793,6 +789,9 @@ public class GbsServerThread implements Runnable {
                 break;
             case "_loginUser":
                 response = _loginUser();
+                break;
+            case "_manualQuery":
+                response = _manualQuery();
                 break;
             case "_createClass":
                 response = _createClass();
