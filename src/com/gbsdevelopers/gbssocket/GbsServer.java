@@ -29,12 +29,14 @@ public class GbsServer {
     public static String mysqlPassword;
 
     /**
+     * MySQL's connection socket
+     */
+    public static Connection conn;
+
+    /**
      * Simple function that puts logs in console window
      * @param message Log message
      */
-
-    public static Connection conn;
-
     public static void log(String message) {
         System.out.println("[GbsServer]\t " + message);
     }
