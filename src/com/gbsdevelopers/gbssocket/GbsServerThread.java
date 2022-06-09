@@ -33,13 +33,14 @@ public class GbsServerThread implements Runnable {
 
     /**
      * Constructor for server thread.
-     * @param inputHeader Header of received message.
+     *
+     * @param inputHeader    Header of received message.
      * @param inputArguments Arguments of received message.
-     * @param toClient Stream to client.
-     * @param socketAddress Server socket address
+     * @param toClient       Stream to client.
+     * @param socketAddress  Server socket address
      */
     public GbsServerThread(String inputHeader, Vector<String> inputArguments, ObjectOutputStream toClient,
-            SocketAddress socketAddress) {
+                           SocketAddress socketAddress) {
         this.inputHeader = inputHeader;
         this.inputArguments = inputArguments;
         this.toClient = toClient;
@@ -48,6 +49,7 @@ public class GbsServerThread implements Runnable {
 
     /**
      * Simple function that puts logs in console window
+     *
      * @param message Log message
      */
     private void log(String message) {
@@ -70,15 +72,16 @@ public class GbsServerThread implements Runnable {
 
     /**
      * Connects to database.
+     *
      * @return MySQL's connection.
      */
-    private Connection getConnection(){
+    private Connection getConnection() {
         Connection conn = null;
-        try{
+        try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             conn = DriverManager.getConnection(GbsServer.mysqlString, GbsServer.mysqlUser, GbsServer.mysqlPassword);
             return conn;
-        }catch (Exception ex){
+        } catch (Exception ex) {
             log(ex.getMessage());
             return null;
         }
@@ -88,6 +91,7 @@ public class GbsServerThread implements Runnable {
 
     /**
      * Handler for _loginUser header.
+     *
      * @return Reply message.
      */
     private GbsMessage _loginUser() {
@@ -103,12 +107,11 @@ public class GbsServerThread implements Runnable {
 
         String loggedUser = "";
         String loggedPerms = "";
-        try{
+        try {
             st = conn.createStatement();
             rs = st.executeQuery(query);
 
-            while(rs.next())
-            {
+            while (rs.next()) {
                 loggedUser = rs.getString("Login");
                 loggedPerms = rs.getString("Uprawnienia");
             }
@@ -119,17 +122,14 @@ public class GbsServerThread implements Runnable {
 
         Vector<String> replyArgs = new Vector<String>();
 
-        if(loggedUser.isEmpty())
-        {
+        if (loggedUser.isEmpty()) {
             reply.header = "1";
             log("Invalid login credentials");
-        }
-        else
-        {
+        } else {
             reply.header = "0";
             replyArgs.add(loggedUser);
             replyArgs.add(loggedPerms);
-            log("Logged user " + loggedUser + " with \"" + loggedPerms +  "\" perms");
+            log("Logged user " + loggedUser + " with \"" + loggedPerms + "\" perms");
         }
 
         reply.arguments = replyArgs;
@@ -139,11 +139,11 @@ public class GbsServerThread implements Runnable {
 
     /**
      * Handler for _configureDB header.
+     *
      * @return Reply message.
      */
-    private GbsMessage _configureDB()
-    {
-        if(!GbsServer.isMySqlSet) {
+    private GbsMessage _configureDB() {
+        if (!GbsServer.isMySqlSet) {
             GbsServer.mysqlString = "jdbc:mysql://";
             GbsServer.mysqlString += inputArguments.get(0);
             GbsServer.mysqlString += ":";
@@ -160,16 +160,13 @@ public class GbsServerThread implements Runnable {
             log("MySql connection password " + GbsServer.mysqlPassword);
 
             GbsServer.isMySqlSet = true;
-        }
-        else
-        {
+        } else {
             GbsServer.log("MySql credentials are previously set.");
         }
         return new GbsMessage("0", null);
     }
 
-    private GbsMessage _createClass()
-    {
+    private GbsMessage _createClass() {
         GbsMessage reply = new GbsMessage();
 
         String className = inputArguments.get(0);
@@ -184,10 +181,8 @@ public class GbsServerThread implements Runnable {
         Connection conn = getConnection();
         Statement st;
 
-        for(String query : queries)
-        {
-            try
-            {
+        for (String query : queries) {
+            try {
                 log("Executing " + query);
                 st = conn.createStatement();
                 st.execute(query);
@@ -200,8 +195,7 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
-    private GbsMessage _removeClass()
-    {
+    private GbsMessage _removeClass() {
         GbsMessage reply = new GbsMessage();
 
         String className = inputArguments.get(0);
@@ -211,13 +205,12 @@ public class GbsServerThread implements Runnable {
         String getIdQuery = "SELECT ID_klasy FROM klasy WHERE nazwa_klasy = '" + className + "';";
         Statement st;
         ResultSet rs;
-        try{
+        try {
             st = conn.createStatement();
             rs = st.executeQuery(getIdQuery);
             log("Executing " + getIdQuery);
 
-            while(rs.next())
-            {
+            while (rs.next()) {
                 classID = rs.getString("ID_klasy");
             }
 
@@ -232,10 +225,8 @@ public class GbsServerThread implements Runnable {
         queries.add("DELETE FROM uczniowie WHERE ID_klasy = " + classID + ";");
         queries.add("DROP TABLE plan_" + className + ";");
 
-        for(String query : queries)
-        {
-            try
-            {
+        for (String query : queries) {
+            try {
                 log("Executing " + query);
                 st = conn.createStatement();
                 st.execute(query);
@@ -248,8 +239,7 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
-    private GbsMessage _listSchedulesTables()
-    {
+    private GbsMessage _listSchedulesTables() {
         GbsMessage reply = new GbsMessage();
 
         Connection conn = getConnection();
@@ -261,12 +251,11 @@ public class GbsServerThread implements Runnable {
 
         Vector<String> classes = new Vector<String>();
 
-        try{
+        try {
             st = conn.createStatement();
             rs = st.executeQuery(query);
 
-            while(rs.next())
-            {
+            while (rs.next()) {
                 classCount++;
                 classes.add(rs.getString("Plany"));
             }
@@ -277,6 +266,49 @@ public class GbsServerThread implements Runnable {
 
         reply.header = Integer.toString(classCount);
         reply.arguments = classes;
+
+        return reply;
+    }
+
+    private GbsMessage _listSchedule() {
+        GbsMessage reply = new GbsMessage();
+
+        String tableName = inputArguments.get(0);
+
+        Connection conn = getConnection();
+        String query = "SELECT * FROM " + tableName + ";";
+        Statement st;
+        ResultSet rs;
+
+        int Count = 0;
+
+        Vector<String> accounts = new Vector<String>();
+
+        try {
+            st = conn.createStatement();
+            rs = st.executeQuery(query);
+
+            while (rs.next()) {
+                Count++;
+                Vector<String> row = new Vector<String>();
+                row.add(rs.getString("Godzina"));
+                row.add(rs.getString("Poniedzialek"));
+                row.add(rs.getString("Wtorek"));
+                row.add(rs.getString("Sroda"));
+                row.add(rs.getString("Czwartek"));
+                row.add(rs.getString("Piatek"));
+
+                accounts.add(GbsMessage.implode(row, ";"));
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        reply.header = Integer.toString(Count);
+        reply.arguments = accounts;
+
+        log("Sending " + tableName);
 
         return reply;
     }
@@ -294,12 +326,11 @@ public class GbsServerThread implements Runnable {
 
         Vector<String> accounts = new Vector<String>();
 
-        try{
+        try {
             st = conn.createStatement();
             rs = st.executeQuery(query);
 
-            while(rs.next())
-            {
+            while (rs.next()) {
                 Count++;
                 Vector<String> row = new Vector<String>();
                 row.add(rs.getString("ID_konta"));
@@ -307,7 +338,7 @@ public class GbsServerThread implements Runnable {
                 row.add(rs.getString("Haslo"));
                 row.add(rs.getString("Uprawnienia"));
 
-                accounts.add(GbsMessage.implode(row,";"));
+                accounts.add(GbsMessage.implode(row, ";"));
             }
 
         } catch (SQLException ex) {
@@ -333,12 +364,11 @@ public class GbsServerThread implements Runnable {
 
         Vector<String> accounts = new Vector<String>();
 
-        try{
+        try {
             st = conn.createStatement();
             rs = st.executeQuery(query);
 
-            while(rs.next())
-            {
+            while (rs.next()) {
                 Count++;
                 Vector<String> row = new Vector<String>();
                 row.add(rs.getString("ID_ucznia"));
@@ -348,7 +378,7 @@ public class GbsServerThread implements Runnable {
                 row.add(rs.getString("ID_klasy"));
                 row.add(rs.getString("ID_konta"));
 
-                accounts.add(GbsMessage.implode(row,";"));
+                accounts.add(GbsMessage.implode(row, ";"));
             }
 
         } catch (SQLException ex) {
@@ -374,12 +404,11 @@ public class GbsServerThread implements Runnable {
 
         Vector<String> accounts = new Vector<String>();
 
-        try{
+        try {
             st = conn.createStatement();
             rs = st.executeQuery(query);
 
-            while(rs.next())
-            {
+            while (rs.next()) {
                 Count++;
                 Vector<String> row = new Vector<String>();
                 row.add(rs.getString("ID_rodzica"));
@@ -387,7 +416,7 @@ public class GbsServerThread implements Runnable {
                 row.add(rs.getString("nazwisko"));
                 row.add(rs.getString("ID_konta"));
 
-                accounts.add(GbsMessage.implode(row,";"));
+                accounts.add(GbsMessage.implode(row, ";"));
             }
 
         } catch (SQLException ex) {
@@ -413,12 +442,11 @@ public class GbsServerThread implements Runnable {
 
         Vector<String> accounts = new Vector<String>();
 
-        try{
+        try {
             st = conn.createStatement();
             rs = st.executeQuery(query);
 
-            while(rs.next())
-            {
+            while (rs.next()) {
                 Count++;
                 Vector<String> row = new Vector<String>();
                 row.add(rs.getString("ID_nauczyciela"));
@@ -427,7 +455,7 @@ public class GbsServerThread implements Runnable {
                 row.add(rs.getString("telefon_kontaktowy"));
                 row.add(rs.getString("ID_konta"));
 
-                accounts.add(GbsMessage.implode(row,";"));
+                accounts.add(GbsMessage.implode(row, ";"));
             }
 
         } catch (SQLException ex) {
@@ -453,19 +481,18 @@ public class GbsServerThread implements Runnable {
 
         Vector<String> accounts = new Vector<String>();
 
-        try{
+        try {
             st = conn.createStatement();
             rs = st.executeQuery(query);
 
-            while(rs.next())
-            {
+            while (rs.next()) {
                 Count++;
                 Vector<String> row = new Vector<String>();
                 row.add(rs.getString("ID_klasy"));
                 row.add(rs.getString("nazwa_klasy"));
                 row.add(rs.getString("ID_nauczyciela"));
 
-                accounts.add(GbsMessage.implode(row,";"));
+                accounts.add(GbsMessage.implode(row, ";"));
             }
 
         } catch (SQLException ex) {
@@ -491,12 +518,11 @@ public class GbsServerThread implements Runnable {
 
         Vector<String> accounts = new Vector<String>();
 
-        try{
+        try {
             st = conn.createStatement();
             rs = st.executeQuery(query);
 
-            while(rs.next())
-            {
+            while (rs.next()) {
                 Count++;
                 Vector<String> row = new Vector<String>();
                 row.add(rs.getString("ID_lekcji"));
@@ -505,7 +531,7 @@ public class GbsServerThread implements Runnable {
                 row.add(rs.getString("ID_nauczyciela"));
                 row.add(rs.getString("ID_klasy"));
 
-                accounts.add(GbsMessage.implode(row,";"));
+                accounts.add(GbsMessage.implode(row, ";"));
             }
 
         } catch (SQLException ex) {
@@ -531,12 +557,11 @@ public class GbsServerThread implements Runnable {
 
         Vector<String> accounts = new Vector<String>();
 
-        try{
+        try {
             st = conn.createStatement();
             rs = st.executeQuery(query);
 
-            while(rs.next())
-            {
+            while (rs.next()) {
                 Count++;
                 Vector<String> row = new Vector<String>();
                 row.add(rs.getString("ID_nieobecnosci"));
@@ -545,7 +570,7 @@ public class GbsServerThread implements Runnable {
                 row.add(rs.getString("data_nieobecnosci"));
                 row.add(rs.getString("TYP"));
 
-                accounts.add(GbsMessage.implode(row,";"));
+                accounts.add(GbsMessage.implode(row, ";"));
             }
 
         } catch (SQLException ex) {
@@ -571,12 +596,11 @@ public class GbsServerThread implements Runnable {
 
         Vector<String> accounts = new Vector<String>();
 
-        try{
+        try {
             st = conn.createStatement();
             rs = st.executeQuery(query);
 
-            while(rs.next())
-            {
+            while (rs.next()) {
                 Count++;
                 Vector<String> row = new Vector<String>();
                 row.add(rs.getString("ID_oceny"));
@@ -588,7 +612,7 @@ public class GbsServerThread implements Runnable {
                 row.add(rs.getString("ID_przedmiotu"));
                 row.add(rs.getString("data_wystawienia"));
 
-                accounts.add(GbsMessage.implode(row,";"));
+                accounts.add(GbsMessage.implode(row, ";"));
             }
 
         } catch (SQLException ex) {
@@ -614,19 +638,18 @@ public class GbsServerThread implements Runnable {
 
         Vector<String> accounts = new Vector<String>();
 
-        try{
+        try {
             st = conn.createStatement();
             rs = st.executeQuery(query);
 
-            while(rs.next())
-            {
+            while (rs.next()) {
                 Count++;
                 Vector<String> row = new Vector<String>();
                 row.add(rs.getString("ID_przedmiotu"));
                 row.add(rs.getString("nazwa_przedmiotu"));
                 row.add(rs.getString("opis"));
 
-                accounts.add(GbsMessage.implode(row,";"));
+                accounts.add(GbsMessage.implode(row, ";"));
             }
 
         } catch (SQLException ex) {
@@ -652,12 +675,11 @@ public class GbsServerThread implements Runnable {
 
         Vector<String> accounts = new Vector<String>();
 
-        try{
+        try {
             st = conn.createStatement();
             rs = st.executeQuery(query);
 
-            while(rs.next())
-            {
+            while (rs.next()) {
                 Count++;
                 Vector<String> row = new Vector<String>();
                 row.add(rs.getString("ID_uwagi"));
@@ -666,7 +688,7 @@ public class GbsServerThread implements Runnable {
                 row.add(rs.getString("ID_ucznia"));
                 row.add(rs.getString("data_wystawienia"));
 
-                accounts.add(GbsMessage.implode(row,";"));
+                accounts.add(GbsMessage.implode(row, ";"));
             }
 
         } catch (SQLException ex) {
@@ -692,12 +714,11 @@ public class GbsServerThread implements Runnable {
 
         Vector<String> accounts = new Vector<String>();
 
-        try{
+        try {
             st = conn.createStatement();
             rs = st.executeQuery(query);
 
-            while(rs.next())
-            {
+            while (rs.next()) {
                 Count++;
                 Vector<String> row = new Vector<String>();
                 row.add(rs.getString("ID_wydarzenia"));
@@ -706,7 +727,7 @@ public class GbsServerThread implements Runnable {
                 row.add(rs.getString("ID_lekcji"));
                 row.add(rs.getString("data_wydarzenia"));
 
-                accounts.add(GbsMessage.implode(row,";"));
+                accounts.add(GbsMessage.implode(row, ";"));
             }
 
         } catch (SQLException ex) {
@@ -732,12 +753,11 @@ public class GbsServerThread implements Runnable {
 
         Vector<String> accounts = new Vector<String>();
 
-        try{
+        try {
             st = conn.createStatement();
             rs = st.executeQuery(query);
 
-            while(rs.next())
-            {
+            while (rs.next()) {
                 Count++;
                 Vector<String> row = new Vector<String>();
                 row.add(rs.getString("ID_wiadomosci"));
@@ -746,7 +766,7 @@ public class GbsServerThread implements Runnable {
                 row.add(rs.getString("ID_odbiorcy"));
                 row.add(rs.getString("data_wyslania"));
 
-                accounts.add(GbsMessage.implode(row,";"));
+                accounts.add(GbsMessage.implode(row, ";"));
             }
 
         } catch (SQLException ex) {
@@ -761,6 +781,7 @@ public class GbsServerThread implements Runnable {
 
     /**
      * Creates server response.
+     *
      * @return Server response message.
      */
     private GbsMessage getResponse() {
@@ -781,6 +802,9 @@ public class GbsServerThread implements Runnable {
                 break;
             case "_listSchedulesTables":
                 response = _listSchedulesTables();
+                break;
+            case "_listSchedule":
+                response = _listSchedule();
                 break;
             case "_listAccounts":
                 response = _listAccounts();
@@ -819,7 +843,8 @@ public class GbsServerThread implements Runnable {
                 response = _listMessages();
                 break;
             default:
-                response = new GbsMessage("empty", new Vector<String>());;
+                response = new GbsMessage("empty", new Vector<String>());
+                ;
         }
         log("finished");
         GbsServer.log("Connection closed with " + socketAddress);
