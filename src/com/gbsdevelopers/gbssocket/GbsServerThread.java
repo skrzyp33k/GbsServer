@@ -39,8 +39,7 @@ public class GbsServerThread implements Runnable {
      * @param toClient       Stream to client.
      * @param socketAddress  Server socket address
      */
-    public GbsServerThread(String inputHeader, Vector<String> inputArguments, ObjectOutputStream toClient,
-                           SocketAddress socketAddress) {
+    public GbsServerThread(String inputHeader, Vector<String> inputArguments, ObjectOutputStream toClient, SocketAddress socketAddress) {
         this.inputHeader = inputHeader;
         this.inputArguments = inputArguments;
         this.toClient = toClient;
@@ -170,14 +169,34 @@ public class GbsServerThread implements Runnable {
         return new GbsMessage("0", null);
     }
 
+    /**
+     * Handler for _manualQuery header.
+     *
+     * @return Reply message.
+     */
     private GbsMessage _manualQuery() {
         GbsMessage reply = new GbsMessage();
 
+        String query = inputArguments.get(0);
 
+        Statement st;
+        try {
+            log("Executing " + query);
+            st = GbsServer.conn.createStatement();
+            st.execute(query);
+        } catch (SQLException ex) {
+            reply.arguments.add(ex.getMessage());
+            ex.printStackTrace();
+        }
 
         return reply;
     }
 
+    /**
+     * Handler for _createClass header.
+     *
+     * @return Reply message.
+     */
     private GbsMessage _createClass() {
         GbsMessage reply = new GbsMessage();
 
@@ -206,6 +225,11 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
+    /**
+     * Handler for _removeClass header.
+     *
+     * @return Reply message.
+     */
     private GbsMessage _removeClass() {
         GbsMessage reply = new GbsMessage();
 
@@ -230,9 +254,9 @@ public class GbsServerThread implements Runnable {
 
         Vector<String> queries = new Vector<String>();
 
-        queries.add("DELETE FROM klasy WHERE ID_klasy = " + classID + ";");
-        queries.add("DELETE FROM lekcje WHERE ID_klasy = " + classID + ";");
         queries.add("DELETE FROM uczniowie WHERE ID_klasy = " + classID + ";");
+        queries.add("DELETE FROM lekcje WHERE ID_klasy = " + classID + ";");
+        queries.add("DELETE FROM klasy WHERE ID_klasy = " + classID + ";");
         queries.add("DROP TABLE plan_" + className + ";");
 
         for (String query : queries) {
@@ -249,6 +273,11 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
+    /**
+     * Handler for _listSchedulesTables header.
+     *
+     * @return Reply message.
+     */
     private GbsMessage _listSchedulesTables() {
         GbsMessage reply = new GbsMessage();
 
@@ -279,6 +308,11 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
+    /**
+     * Handler for _listSchedule header.
+     *
+     * @return Reply message.
+     */
     private GbsMessage _listSchedule() {
         GbsMessage reply = new GbsMessage();
 
@@ -321,6 +355,362 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
+    /**
+     * Handler for _addStudent header.
+     *
+     * @return Reply message.
+     */
+    private GbsMessage _addStudent() {
+        GbsMessage reply = new GbsMessage();
+
+        String name = inputArguments.get(0);
+        String surname = inputArguments.get(1);
+        String classID = inputArguments.get(2);
+        String studentPass = inputArguments.get(3);
+        String parentPass = inputArguments.get(4);
+
+        //zbuduj nickname (1 litera imienia + 3 litery nazwiska + id + r jak rodzic)
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(name.substring(0, 1));
+        sb.append(surname.substring(0, 3));
+
+        String login = sb.toString().toLowerCase(Locale.ROOT);
+
+        String studentID = "";
+        String parentID = "";
+
+        Statement st;
+        ResultSet rs;
+
+        //dodaj konto ucznia (losowy login)
+
+        try {
+            String query = "INSERT INTO konta VALUES (null, '"+login+"','"+studentPass+"','u')";
+            log("Executing " + query);
+            st = GbsServer.conn.createStatement();
+            st.execute(query);
+        } catch (SQLException ex) {
+            reply.arguments.add(ex.getMessage());
+            ex.printStackTrace();
+        }
+
+        //zapisz id konta ucznia
+
+        try {
+            String query = "SELECT ID_konta FROM konta WHERE Login = '"+login+"';";
+            log("Executing " + query);
+            st = GbsServer.conn.createStatement();
+            rs = st.executeQuery(query);
+
+            while (rs.next()) {
+                studentID = rs.getString("ID_konta");
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        //zaaktualizuj login ucznia
+
+        try {
+            String query = "UPDATE konta SET Login = '"+login+studentID+"u' WHERE ID_konta = " + studentID + ";";
+            log("Executing " + query);
+            st = GbsServer.conn.createStatement();
+            st.execute(query);
+        } catch (SQLException ex) {
+            reply.arguments.add(ex.getMessage());
+            ex.printStackTrace();
+        }
+
+        //dodaj konto rodzica (losowy login)
+
+        try {
+            String query = "INSERT INTO konta VALUES (null, '"+login+"','"+parentPass+"','r')";
+            log("Executing " + query);
+            st = GbsServer.conn.createStatement();
+            st.execute(query);
+        } catch (SQLException ex) {
+            reply.arguments.add(ex.getMessage());
+            ex.printStackTrace();
+        }
+
+        //zapisz id konta rodzica
+
+        try {
+            String query = "SELECT ID_konta FROM konta WHERE Login = '"+login+"';";
+            log("Executing " + query);
+            st = GbsServer.conn.createStatement();
+            rs = st.executeQuery(query);
+
+            while (rs.next()) {
+                parentID = rs.getString("ID_konta");
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        //zaaktualizuj login rodzica
+
+        try {
+            String query = "UPDATE konta SET Login = '"+login+parentID+"r' WHERE ID_konta = " + parentID + ";";
+            log("Executing " + query);
+            st = GbsServer.conn.createStatement();
+            st.execute(query);
+        } catch (SQLException ex) {
+            reply.arguments.add(ex.getMessage());
+            ex.printStackTrace();
+        }
+
+        //dodaj rodzica
+
+        try {
+            String query = "INSERT INTO rodzice VALUES(null,'"+name+"','"+surname+"',"+parentID+");";
+            log("Executing " + query);
+            st = GbsServer.conn.createStatement();
+            st.execute(query);
+        } catch (SQLException ex) {
+            reply.arguments.add(ex.getMessage());
+            ex.printStackTrace();
+        }
+
+        //zapisz id rodzica z tabeli rodzice
+
+        try {
+            String query = "SELECT ID_rodzica FROM rodzice WHERE ID_konta = "+parentID+";";
+            log("Executing " + query);
+            st = GbsServer.conn.createStatement();
+            rs = st.executeQuery(query);
+
+            while (rs.next()) {
+                parentID = rs.getString("ID_rodzica");
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        //dodaj ucznia
+
+        try {
+            String query = "INSERT INTO uczniowie VALUES(null,'"+name+"','"+surname+"',"+parentID+","+classID+","+studentID+");";
+            log("Executing " + query);
+            st = GbsServer.conn.createStatement();
+            st.execute(query);
+        } catch (SQLException ex) {
+            reply.arguments.add(ex.getMessage());
+            ex.printStackTrace();
+        }
+
+        return reply;
+    }
+
+    /**
+     * Handler for _removeStudent header.
+     *
+     * @return Reply message.
+     */
+    private GbsMessage _removeStudent() {
+        GbsMessage reply = new GbsMessage();
+
+        String studentID = inputArguments.get(0);
+
+        Statement st;
+        ResultSet rs;
+
+        String studentAccountID = "";
+        String parentAccountID = "";
+
+        try {
+            String query = "SELECT ID_konta FROM uczniowie WHERE ID_ucznia = "+studentID+";";
+            log("Executing " + query);
+            st = GbsServer.conn.createStatement();
+            rs = st.executeQuery(query);
+
+            while (rs.next()) {
+                studentAccountID = rs.getString("ID_konta");
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        try {
+            String query = "SELECT r.ID_konta AS ID_konta FROM uczniowie u, rodzice r WHERE u.ID_rodzica = r.ID_rodzica AND ID_ucznia = "+studentID+";";
+            log("Executing " + query);
+            st = GbsServer.conn.createStatement();
+            rs = st.executeQuery(query);
+
+            while (rs.next()) {
+                parentAccountID = rs.getString("ID_konta");
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        try {
+            String query = "DELETE FROM konta WHERE ID_konta IN ("+studentAccountID+","+parentAccountID+")";
+            log("Executing " + query);
+            st = GbsServer.conn.createStatement();
+            st.execute(query);
+        } catch (SQLException ex) {
+            reply.arguments.add(ex.getMessage());
+            ex.printStackTrace();
+        }
+
+
+        return reply;
+    }
+
+    /**
+     * Handler for _addTeacher header.
+     *
+     * @return Reply message.
+     */
+    private GbsMessage _addTeacher() {
+        GbsMessage reply = new GbsMessage();
+
+        String name = inputArguments.get(0);
+        String surname = inputArguments.get(1);
+        String pass = inputArguments.get(2);
+        String phone = inputArguments.get(3);
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(name.substring(0,1));
+        sb.append(surname.substring(0,3));
+
+        String login = sb.toString().toLowerCase(Locale.ROOT);
+        String teacherID = "";
+
+        Statement st;
+        ResultSet rs;
+
+        try {
+            String query = "INSERT INTO konta VALUES (null, '"+login+"','"+pass+"','n')";
+            log("Executing " + query);
+            st = GbsServer.conn.createStatement();
+            st.execute(query);
+        } catch (SQLException ex) {
+            reply.arguments.add(ex.getMessage());
+            ex.printStackTrace();
+        }
+
+        try {
+            String query = "SELECT ID_konta FROM konta WHERE Login = '"+login+"';";
+            log("Executing " + query);
+            st = GbsServer.conn.createStatement();
+            rs = st.executeQuery(query);
+
+            while (rs.next()) {
+                teacherID = rs.getString("ID_konta");
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        try {
+            String query = "UPDATE konta SET Login = '"+login+teacherID+"n' WHERE ID_konta = " + teacherID + ";";
+            log("Executing " + query);
+            st = GbsServer.conn.createStatement();
+            st.execute(query);
+        } catch (SQLException ex) {
+            reply.arguments.add(ex.getMessage());
+            ex.printStackTrace();
+        }
+
+        try {
+            String query = "INSERT INTO nauczyciele VALUES (null,'"+name+"','"+surname+"','"+phone+"',"+teacherID+");";
+            log("Executing " + query);
+            st = GbsServer.conn.createStatement();
+            st.execute(query);
+        } catch (SQLException ex) {
+            reply.arguments.add(ex.getMessage());
+            ex.printStackTrace();
+        }
+
+
+        return reply;
+    }
+
+    /**
+     * Handler for _removeTeacher header.
+     *
+     * @return Reply message.
+     */
+    private GbsMessage _removeTeacher() {
+        GbsMessage reply = new GbsMessage();
+
+        String teacherID = inputArguments.get(0);
+
+        Statement st;
+        ResultSet rs;
+
+        String accountID = "";
+
+        try {
+            String query = "SELECT ID_konta FROM nauczyciele WHERE ID_nauczyciela = "+teacherID+";";
+            log("Executing " + query);
+            st = GbsServer.conn.createStatement();
+            rs = st.executeQuery(query);
+
+            while (rs.next()) {
+                accountID = rs.getString("ID_konta");
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        try {
+            String query = "DELETE FROM konta WHERE ID_konta = "+accountID+";";
+            log("Executing " + query);
+            st = GbsServer.conn.createStatement();
+            st.execute(query);
+        } catch (SQLException ex) {
+            reply.arguments.add(ex.getMessage());
+            ex.printStackTrace();
+        }
+
+        return reply;
+    }
+
+    /**
+     * Handler for _changeAttendance header.
+     *
+     * @return Reply message.
+     */
+    private GbsMessage _changeAttendance() {
+        GbsMessage reply = new GbsMessage();
+
+        String attendanceID = inputArguments.get(0);
+
+        String newType = inputArguments.get(1);
+
+        Statement st;
+
+        try {
+            String query = "UPDATE nieobecnosci SET TYP = '"+newType+"' WHERE ID_nieobecnosci = "+attendanceID+";";
+            log("Executing " + query);
+            st = GbsServer.conn.createStatement();
+            st.execute(query);
+        } catch (SQLException ex) {
+            reply.arguments.add(ex.getMessage());
+            ex.printStackTrace();
+        }
+
+        return reply;
+    }
+
+    /**
+     * Handler for _listAccounts header.
+     *
+     * @return Reply message.
+     */
     private GbsMessage _listAccounts() //dodaj where
     {
         GbsMessage reply = new GbsMessage();
@@ -358,6 +748,11 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
+    /**
+     * Handler for _listStudents header.
+     *
+     * @return Reply message.
+     */
     private GbsMessage _listStudents() //dodaj where
     {
         GbsMessage reply = new GbsMessage();
@@ -397,6 +792,11 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
+    /**
+     * Handler for _listParents header.
+     *
+     * @return Reply message.
+     */
     private GbsMessage _listParents() //dodaj where
     {
         GbsMessage reply = new GbsMessage();
@@ -434,6 +834,11 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
+    /**
+     * Handler for _listTeachers header.
+     *
+     * @return Reply message.
+     */
     private GbsMessage _listTeachers() //dodaj where
     {
         GbsMessage reply = new GbsMessage();
@@ -472,6 +877,11 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
+    /**
+     * Handler for _listClasses header.
+     *
+     * @return Reply message.
+     */
     private GbsMessage _listClasses() //dodaj where
     {
         GbsMessage reply = new GbsMessage();
@@ -508,6 +918,11 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
+    /**
+     * Handler for _listLessons header.
+     *
+     * @return Reply message.
+     */
     private GbsMessage _listLessons() //dodaj where
     {
         GbsMessage reply = new GbsMessage();
@@ -546,6 +961,11 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
+    /**
+     * Handler for _listAttendances header.
+     *
+     * @return Reply message.
+     */
     private GbsMessage _listAttendances() //dodaj where
     {
         GbsMessage reply = new GbsMessage();
@@ -584,6 +1004,11 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
+    /**
+     * Handler for _listGrades header.
+     *
+     * @return Reply message.
+     */
     private GbsMessage _listGrades() //dodaj where
     {
         GbsMessage reply = new GbsMessage();
@@ -625,6 +1050,11 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
+    /**
+     * Handler for _listCourses header.
+     *
+     * @return Reply message.
+     */
     private GbsMessage _listCourses() //dodaj where
     {
         GbsMessage reply = new GbsMessage();
@@ -661,6 +1091,11 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
+    /**
+     * Handler for _listRemarks header.
+     *
+     * @return Reply message.
+     */
     private GbsMessage _listRemarks() //dodaj where
     {
         GbsMessage reply = new GbsMessage();
@@ -699,6 +1134,11 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
+    /**
+     * Handler for _listEvents header.
+     *
+     * @return Reply message.
+     */
     private GbsMessage _listEvents() //dodaj where
     {
         GbsMessage reply = new GbsMessage();
@@ -737,6 +1177,11 @@ public class GbsServerThread implements Runnable {
         return reply;
     }
 
+    /**
+     * Handler for _listMessages header.
+     *
+     * @return Reply message.
+     */
     private GbsMessage _listMessages() //dodaj where
     {
         GbsMessage reply = new GbsMessage();
@@ -804,6 +1249,21 @@ public class GbsServerThread implements Runnable {
                 break;
             case "_listSchedule":
                 response = _listSchedule();
+                break;
+            case "_addStudent":
+                response = _addStudent();
+                break;
+            case "_addTeacher":
+                response = _addTeacher();
+                break;
+            case "_removeStudent":
+                response = _removeStudent();
+                break;
+            case "_removeTeacher":
+                response = _removeTeacher();
+                break;
+            case "_changeAttendance":
+                response = _changeAttendance();
                 break;
             case "_listAccounts":
                 response = _listAccounts();
