@@ -25,7 +25,7 @@ public final class GbsMessage implements Serializable
     public GbsMessage()
     {
         header = "";
-        arguments = new Vector<String>();
+        arguments = new Vector<>();
     }
 
     /**
@@ -74,6 +74,25 @@ public final class GbsMessage implements Serializable
      * @return Vector of strings.
      */
     public static Vector<String> explode(String string, String delim) {
-        return new Vector<String>(Arrays.asList(string.split(delim)));
+        return new Vector<>(Arrays.asList(string.split(delim)));
+    }
+
+    /**
+     * Function that calculates MD5 hash.
+     * @param md5 String to hash.
+     * @return MD5 checksum.
+     */
+    public static String MD5(String md5) {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("MD5");
+            byte[] array = md.digest(md5.getBytes());
+            StringBuilder sb = new StringBuilder();
+            for (byte b : array) {
+                sb.append(Integer.toHexString((b & 0xFF) | 0x100), 1, 3);
+            }
+            return sb.toString();
+        } catch (java.security.NoSuchAlgorithmException ignored) {
+        }
+        return null;
     }
 }

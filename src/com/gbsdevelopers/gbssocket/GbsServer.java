@@ -74,7 +74,7 @@ public class GbsServer {
      * @param args Program arguments
      */
     public static void main(String[] args) {
-        int serverPort = 0;
+        int serverPort;
         isMySqlSet = false;
         try
         {
@@ -85,9 +85,9 @@ public class GbsServer {
             log("You have not specified port number! Using random port number instead!");
             serverPort = getRandomPort();
         }
-        ServerSocket serverSocket = null;
-        ObjectOutputStream toClient = null;
-        ObjectInputStream fromClient = null;
+        ServerSocket serverSocket;
+        ObjectOutputStream toClient;
+        ObjectInputStream fromClient;
         try {
             log("Server running on port " + serverPort);
             serverSocket = new ServerSocket(serverPort);
@@ -100,10 +100,7 @@ public class GbsServer {
                 new Thread(new GbsServerThread(msgRequest.header, msgRequest.arguments, toClient,
                         socket.getRemoteSocketAddress())).start();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(1);
-        } catch (ClassNotFoundException e) {
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
             System.exit(1);
         }
