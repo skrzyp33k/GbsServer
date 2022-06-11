@@ -370,15 +370,17 @@ public class GbsServerThread implements Runnable {
     private GbsMessage _addStudent() {
         GbsMessage reply = new GbsMessage();
 
-        String name = inputArguments.get(0);
-        String surname = inputArguments.get(1);
-        String classID = inputArguments.get(2);
-        String studentPass = inputArguments.get(3);
-        String parentPass = inputArguments.get(4);
+        String studentName = inputArguments.get(0);
+        String studentSurname = inputArguments.get(1);
+        String parentName = inputArguments.get(2);
+        String parentSurname = inputArguments.get(3);
+        String classID = inputArguments.get(4);
+        String studentPass = inputArguments.get(5);
+        String parentPass = inputArguments.get(6);
 
         //zbuduj nickname (1 litera imienia + 3 litery nazwiska + id + r jak rodzic)
 
-        String sb = name.charAt(0) + surname.substring(0, 3);
+        String sb = studentName.charAt(0) + studentSurname.substring(0, 3);
 
         String login = sb.toLowerCase(Locale.ROOT);
 
@@ -471,7 +473,7 @@ public class GbsServerThread implements Runnable {
         //dodaj rodzica
 
         try {
-            String query = "INSERT INTO rodzice VALUES(null,'" + name + "','" + surname + "'," + parentID + ");";
+            String query = "INSERT INTO rodzice VALUES(null,'" + parentName + "','" + parentSurname + "'," + parentID + ");";
             log("Executing " + query);
             st = GbsServer.conn.createStatement();
             st.execute(query);
@@ -499,7 +501,7 @@ public class GbsServerThread implements Runnable {
         //dodaj ucznia
 
         try {
-            String query = "INSERT INTO uczniowie VALUES(null,'" + name + "','" + surname + "'," + parentID + "," + classID + "," + studentID + ");";
+            String query = "INSERT INTO uczniowie VALUES(null,'" + studentName + "','" + studentSurname + "'," + parentID + "," + classID + "," + studentID + ");";
             log("Executing " + query);
             st = GbsServer.conn.createStatement();
             st.execute(query);
