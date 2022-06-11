@@ -1,7 +1,6 @@
 package com.gbsdevelopers.gbssocket;
 
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.SocketAddress;
 import java.sql.*;
 import java.util.Locale;
@@ -53,7 +52,25 @@ public class GbsServerThread implements Runnable {
      * @param message Log message
      */
     private void log(String message) {
-        System.out.println("[" + inputHeader + socketAddress + "]\t " + message);
+
+        String logmessage = "[\" + inputHeader + socketAddress + \"]\t " + message;
+
+        FileWriter fw = null;
+        try {
+            fw = new FileWriter(GbsServer.logFileName, true);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        BufferedWriter bw = new BufferedWriter(fw);
+        try {
+            bw.write(logmessage);
+            bw.newLine();
+            bw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println(logmessage);
     }
 
     /**
