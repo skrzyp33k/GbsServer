@@ -378,8 +378,7 @@ public class GbsServerThread implements Runnable {
 
         //zbuduj nickname (1 litera imienia + 3 litery nazwiska + id + r jak rodzic)
 
-        String sb = name.charAt(0) +
-                surname.substring(0, 3);
+        String sb = name.charAt(0) + surname.substring(0, 3);
 
         String login = sb.toLowerCase(Locale.ROOT);
 
@@ -583,8 +582,7 @@ public class GbsServerThread implements Runnable {
         String pass = inputArguments.get(2);
         String phone = inputArguments.get(3);
 
-        String sb = name.charAt(0) +
-                surname.substring(0, 3);
+        String sb = name.charAt(0) + surname.substring(0, 3);
 
         String login = sb.toLowerCase(Locale.ROOT);
         String teacherID = "";
@@ -1217,6 +1215,7 @@ public class GbsServerThread implements Runnable {
 
     /**
      * Handler for _executeSelect header
+     *
      * @return Reply message
      */
     private GbsMessage _executeSelect() {
@@ -1227,27 +1226,28 @@ public class GbsServerThread implements Runnable {
 
         Vector<String> rows = new Vector<>();
 
-        int Count = -1;
+        int AllCount = 0;
+        for (String query : inputArguments) {
+            try {
+                log("Executing " + query);
+                st = GbsServer.conn.createStatement();
+                rs = st.executeQuery(query);
+                int Count = rs.getMetaData().getColumnCount();
+                while (rs.next()) {
+                    Vector<String> row = new Vector<>();
+                    for (int i = 0; i < Count; i++) {
+                        row.add(rs.getString(i + 1));
+                        AllCount++;
+                    }
 
-        try {
-            log("Executing " + inputArguments.get(0));
-            st = GbsServer.conn.createStatement();
-            rs = st.executeQuery(inputArguments.get(0));
-            Count = rs.getMetaData().getColumnCount();
-            while (rs.next()) {
-                Vector<String> row = new Vector<>();
-                for (int i = 0; i < Count; i++ ) {
-                    row.add(rs.getString(i+1));
+                    rows.add(GbsMessage.implode(row, ";"));
                 }
 
-                rows.add(GbsMessage.implode(row, ";"));
+            } catch (SQLException ex) {
+                ex.printStackTrace();
             }
-
-        } catch (SQLException ex) {
-            ex.printStackTrace();
         }
-
-        reply.header = Integer.toString(Count);
+        reply.header = Integer.toString(AllCount);
         reply.arguments = rows;
 
         return reply;
