@@ -44,7 +44,7 @@ public final class GbsMessage implements Serializable
      * @param s Input string.
      * @return String without last character.
      */
-    private static String removeLastChar(String s) {
+    public static String removeLastChar(String s) {
         return s.substring(0, s.length() - 1);
     }
 
