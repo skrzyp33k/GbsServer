@@ -53,7 +53,7 @@ public class GbsServerThread implements Runnable {
      */
     private void log(String message) {
 
-        String logmessage = "[\" + inputHeader + socketAddress + \"]\t " + message;
+        String logmessage = "[" + inputHeader + socketAddress + "]\t " + message;
 
         FileWriter fw = null;
         try {
@@ -229,9 +229,10 @@ public class GbsServerThread implements Runnable {
         Vector<String> queries = new Vector<>();
 
         queries.add("INSERT INTO klasy VALUES(null, '" + className + "', " + inputArguments.get(1) + ");");
-        queries.add("CREATE TABLE plan_" + className + " (Godzina int(11) NOT NULL AUTO_INCREMENT, Poniedzialek int(4) DEFAULT NULL, Wtorek int(4) DEFAULT NULL, Sroda int(4) DEFAULT NULL, Czwartek int(4) DEFAULT NULL, Piatek int(4) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_polish_ci;");
-        queries.add("ALTER TABLE plan_" + className + " ADD PRIMARY KEY (Godzina), ADD KEY Poniedzialek(Poniedzialek), ADD KEY Wtorek(Wtorek), ADD KEY Sroda(Sroda), ADD KEY Czwartek (Czwartek), ADD KEY Piatek (Piatek);");
+        queries.add("CREATE TABLE plan_" + className + " (Godzina int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY, Poniedzialek int(4) DEFAULT NULL, Wtorek int(4) DEFAULT NULL, Sroda int(4) DEFAULT NULL, Czwartek int(4) DEFAULT NULL, Piatek int(4) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_polish_ci;");
+        queries.add("ALTER TABLE plan_" + className + " ADD KEY Poniedzialek(Poniedzialek), ADD KEY Wtorek(Wtorek), ADD KEY Sroda(Sroda), ADD KEY Czwartek (Czwartek), ADD KEY Piatek (Piatek);");
         queries.add("ALTER TABLE plan_" + className + " ADD CONSTRAINT plan_" + className + "_ibfk_1 FOREIGN KEY (Poniedzialek) REFERENCES lekcje(ID_lekcji), ADD CONSTRAINT plan_" + className + "_ibfk_2 FOREIGN KEY(Wtorek) REFERENCES lekcje(ID_lekcji), ADD CONSTRAINT plan_" + className + "_ibfk_3 FOREIGN KEY(Sroda) REFERENCES lekcje(ID_lekcji), ADD CONSTRAINT plan_" + className + "_ibfk_4 FOREIGN KEY(Czwartek) REFERENCES lekcje(ID_lekcji), ADD CONSTRAINT plan_" + className + "_ibfk_5 FOREIGN KEY(Piatek) REFERENCES lekcje(ID_lekcji);");
+        queries.add("INSERT INTO plan_" + className + "(Godzina) VALUES(null),(null),(null),(null),(null),(null),(null),(null);");
 
         Statement st;
 
@@ -400,6 +401,16 @@ public class GbsServerThread implements Runnable {
         String sb = studentName.charAt(0) + studentSurname.substring(0, 3);
 
         String login = sb.toLowerCase(Locale.ROOT);
+
+        login = login.replace('ą', 'a');
+        login = login.replace('ć', 'c');
+        login = login.replace('ę', 'e');
+        login = login.replace('ł', 'l');
+        login = login.replace('ń', 'ń');
+        login = login.replace('ó', 'o');
+        login = login.replace('ś', 's');
+        login = login.replace('ź', 'z');
+        login = login.replace('ż', 'z');
 
         String studentID = "";
         String parentID = "";

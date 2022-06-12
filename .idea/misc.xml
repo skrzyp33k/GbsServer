@@ -3,6 +3,10 @@
   <component name="EntryPointsManager">
     <pattern value="com.gbsdevelopers.gbssocket.GbsMessage" method="explode" />
   </component>
+  <component name="JavadocGenerationManager">
+    <option name="OUTPUT_DIRECTORY" value="D:/GbsServerDoc" />
+    <option name="OPTION_SCOPE" value="private" />
+  </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_X" default="true" project-jdk-name="openjdk-18" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
